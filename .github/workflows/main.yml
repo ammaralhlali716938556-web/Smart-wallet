@@ -1,0 +1,856 @@
+name: Build Smart Wallet APK
+
+'on':
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Smart Wallet Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Accept Android SDK Licenses
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses" || true
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
+
+      - name: Generate Android Project Structure
+        run: |
+          mkdir -p app/src/main/java/com/mywallet/smartbudget
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/res/values
+
+          # 1. settings.gradle
+          cat << 'END_SETTINGS' > settings.gradle
+          pluginManagement {
+              repositories {
+                  google()
+                  mavenCentral()
+                  gradlePluginPortal()
+              }
+          }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          rootProject.name = "SmartWallet"
+          include ':app'
+          END_SETTINGS
+
+          # 2. build.gradle
+          cat << 'END_BUILD' > build.gradle
+          plugins {
+              id 'com.android.application' version '8.2.2' apply false
+          }
+          END_BUILD
+
+          # 3. app/build.gradle
+          cat << 'END_APP_BUILD' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+          }
+
+          android {
+              namespace 'com.mywallet.smartbudget'
+              compileSdk 34
+
+              defaultConfig {
+                  applicationId "com.mywallet.smartbudget"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0.0"
+              }
+
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.debug
+                  }
+                  debug {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+
+              compileOptions {
+                  sourceCompatibility JavaVersion.VERSION_17
+                  targetCompatibility JavaVersion.VERSION_17
+              }
+          }
+          END_APP_BUILD
+
+          # 4. AndroidManifest.xml
+          cat << 'END_MANIFEST' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+              <application
+                  android:allowBackup="true"
+                  android:icon="@mipmap/ic_launcher"
+                  android:label="@string/app_name"
+                  android:roundIcon="@mipmap/ic_launcher"
+                  android:supportsRtl="true"
+                  android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+
+          </manifest>
+          END_MANIFEST
+
+          # 5. strings.xml
+          cat << 'END_STRINGS' > app/src/main/res/values/strings.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <string name="app_name">محفظتي الذكية</string>
+          </resources>
+          END_STRINGS
+
+          # 6. MainActivity.java
+          cat << 'END_JAVA' > app/src/main/java/com/mywallet/smartbudget/MainActivity.java
+          package com.mywallet.smartbudget;
+
+          import android.app.Activity;
+          import android.app.AlertDialog;
+          import android.graphics.Color;
+          import android.os.Build;
+          import android.os.Bundle;
+          import android.view.Window;
+          import android.view.WindowManager;
+          import android.webkit.JsResult;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+              private WebView webView;
+
+              @Override
+              protected void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+
+                  requestWindowFeature(Window.FEATURE_NO_TITLE);
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                      Window window = getWindow();
+                      window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+                      window.setStatusBarColor(Color.parseColor("#09101d"));
+                  }
+
+                  webView = new WebView(this);
+                  setContentView(webView);
+
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setAllowContentAccess(true);
+                  settings.setUseWideViewPort(true);
+                  settings.setLoadWithOverviewMode(true);
+
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                          new AlertDialog.Builder(MainActivity.this)
+                              .setTitle("محفظتي الذكية")
+                              .setMessage(message)
+                              .setPositiveButton(android.R.string.ok, (dialog, which) -> result.confirm())
+                              .setCancelable(false)
+                              .create()
+                              .show();
+                          return true;
+                      }
+
+                      @Override
+                      public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
+                          new AlertDialog.Builder(MainActivity.this)
+                              .setTitle("تأكيد الإجراء")
+                              .setMessage(message)
+                              .setPositiveButton("نعم", (dialog, which) -> result.confirm())
+                              .setNegativeButton("إلغاء", (dialog, which) -> result.cancel())
+                              .setCancelable(false)
+                              .create()
+                              .show();
+                          return true;
+                      }
+                  });
+
+                  webView.loadUrl("file:///android_asset/index.html");
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView != null && webView.canGoBack()) {
+                      webView.goBack();
+                  } else {
+                      super.onBackPressed();
+                  }
+              }
+          }
+          END_JAVA
+
+      - name: Generate App Icons
+        run: |
+          cat << 'EOF' > make_icons.py
+          import zlib, struct, os
+
+          def make_wallet_icon(size):
+              raw = bytearray()
+              cx, cy = size / 2.0, size / 2.0
+              r = size / 2.0 - 2
+              for y in range(size):
+                  raw.append(0)
+                  for x in range(size):
+                      dx = x - cx
+                      dy = y - cy
+                      dist = (dx*dx + dy*dy)**0.5
+                      if dist > r:
+                          raw.extend([0, 0, 0, 0])
+                          continue
+                      bg_r = int(9 + (y / size) * 12)
+                      bg_g = int(20 + (y / size) * 22)
+                      bg_b = int(32 + (y / size) * 30)
+
+                      if dist >= r - 3:
+                          raw.extend([16, 185, 129, 255])
+                          continue
+                      elif dist >= r - 6:
+                          raw.extend([245, 158, 11, 200])
+                          continue
+
+                      wx = (x - (cx - size * 0.02)) / (size * 0.28)
+                      wy = (y - cy) / (size * 0.22)
+                      in_wallet = (abs(wx) <= 1.0 and abs(wy) <= 1.0)
+                      if in_wallet:
+                          is_clasp = (wx >= 0.4 and abs(wy) <= 0.4)
+                          is_edge = (abs(wx) >= 0.9 or abs(wy) >= 0.9)
+                          if is_clasp:
+                              raw.extend([245, 158, 11, 255])
+                          elif is_edge:
+                              raw.extend([16, 185, 129, 255])
+                          else:
+                              raw.extend([15, 45, 38, 255])
+                      else:
+                          raw.extend([bg_r, bg_g, bg_b, 255])
+
+              comp = zlib.compress(bytes(raw))
+              png = bytearray(b'\x89PNG\r\n\x1a\n')
+              ihdr = struct.pack('>IIBBBBB', size, size, 8, 6, 0, 0, 0)
+              png.extend(struct.pack('>I', 13) + b'IHDR' + ihdr + struct.pack('>I', zlib.crc32(b'IHDR' + ihdr)))
+              png.extend(struct.pack('>I', len(comp)) + b'IDAT' + comp + struct.pack('>I', zlib.crc32(b'IDAT' + comp)))
+              png.extend(struct.pack('>I', 0) + b'IEND' + struct.pack('>I', zlib.crc32(b'IEND')))
+              return bytes(png)
+
+          densities = [('mipmap-mdpi', 48), ('mipmap-hdpi', 72), ('mipmap-xhdpi', 96), ('mipmap-xxhdpi', 144)]
+          for folder, s in densities:
+              path = f'app/src/main/res/{folder}'
+              os.makedirs(path, exist_ok=True)
+              with open(f'{path}/ic_launcher.png', 'wb') as f:
+                  f.write(make_wallet_icon(s))
+          EOF
+          python3 make_icons.py
+          rm make_icons.py
+
+      - name: Embed Smart Wallet HTML App
+        run: |
+          cat << 'EOF' > app/src/main/assets/index.html
+          <!DOCTYPE html>
+          <html lang="ar" dir="rtl">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+              <title>محفظتي الذكية</title>
+              <style>
+                  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+                  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
+                  body { background-color: #09101d; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px; user-select: none; }
+                  .container { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 14px; padding-bottom: 30px; }
+
+                  /* Header */
+                  .app-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px 6px; }
+                  .logo-area { display: flex; align-items: center; gap: 10px; }
+                  .logo-icon { background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); }
+                  .logo-title { font-size: 18px; font-weight: 900; color: #fff; }
+                  .tabs-nav { display: flex; background: rgba(30, 41, 59, 0.7); padding: 4px; border-radius: 12px; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.05); }
+                  .tab-btn { background: none; border: none; padding: 6px 12px; border-radius: 8px; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+                  .tab-btn.active { background: #10b981; color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); }
+
+                  /* Main Balance Card */
+                  .balance-card { background: linear-gradient(145deg, #112620, #0c1815); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; padding: 18px 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; }
+                  .balance-card::before { content: ''; position: absolute; top: -50px; left: -50px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%); }
+                  .balance-label { font-size: 12px; color: #94a3b8; font-weight: 600; }
+                  .balance-amount { font-size: 32px; font-weight: 900; color: #10b981; margin: 4px 0 14px; text-shadow: 0 0 15px rgba(16, 185, 129, 0.3); display: flex; align-items: baseline; gap: 6px; }
+                  .currency-tag { font-size: 14px; color: #6ee7b7; font-weight: 700; }
+                  .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+                  .sub-card { display: flex; flex-direction: column; gap: 2px; }
+                  .sub-label { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
+                  .sub-val-in { font-size: 16px; font-weight: 800; color: #34d399; }
+                  .sub-val-out { font-size: 16px; font-weight: 800; color: #f87171; }
+
+                  /* Budget Bar Card */
+                  .budget-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
+                  .budget-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
+                  .budget-title { color: #cbd5e1; display: flex; align-items: center; gap: 6px; }
+                  .budget-remain { color: #f59e0b; }
+                  .progress-track { width: 100%; height: 8px; background: #1e293b; border-radius: 6px; overflow: hidden; position: relative; }
+                  .progress-fill { height: 100%; border-radius: 6px; transition: 0.4s; }
+                  .budget-warning { font-size: 11px; color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+
+                  /* Action Button */
+                  .btn-add-tx { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35); transition: 0.2s; width: 100%; }
+                  .btn-add-tx:active { transform: scale(0.98); }
+
+                  /* Transactions List */
+                  .section-title-wrap { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+                  .section-title { font-size: 14px; font-weight: 800; color: #e2e8f0; }
+                  .filter-chips { display: flex; gap: 6px; }
+                  .chip { background: #1e293b; color: #94a3b8; border: none; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+                  .chip.active { background: #334155; color: #38bdf8; }
+                  .tx-list { display: flex; flex-direction: column; gap: 8px; }
+                  .tx-item { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+                  .tx-right { display: flex; align-items: center; gap: 12px; }
+                  .tx-icon-box { width: 38px; height: 38px; border-radius: 10px; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+                  .tx-info { display: flex; flex-direction: column; gap: 2px; }
+                  .tx-name { font-size: 14px; font-weight: 700; color: #f8fafc; }
+                  .tx-sub { font-size: 11px; color: #64748b; }
+                  .tx-left { display: flex; align-items: center; gap: 10px; }
+                  .tx-amount { font-size: 15px; font-weight: 800; }
+                  .tx-in { color: #34d399; }
+                  .tx-out { color: #f87171; }
+                  .btn-del-tx { background: none; border: none; color: #475569; font-size: 14px; cursor: pointer; padding: 4px; }
+                  .btn-del-tx:hover { color: #f43f5e; }
+                  .empty-box { text-align: center; padding: 30px 10px; color: #64748b; font-size: 13px; }
+
+                  /* Modal Form */
+                  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
+                  .modal-box { background: #0f172a; width: 100%; max-width: 460px; border-radius: 24px 24px 0 0; border-top: 1px solid rgba(255, 255, 255, 0.1); max-height: 88vh; overflow-y: auto; padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; }
+                  .type-switch { display: grid; grid-template-columns: 1fr 1fr; background: #1e293b; border-radius: 12px; padding: 4px; gap: 4px; }
+                  .type-btn { background: none; border: none; padding: 10px; border-radius: 10px; color: #94a3b8; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; }
+                  .type-btn.active-exp { background: #ef4444; color: #fff; }
+                  .type-btn.active-inc { background: #10b981; color: #fff; }
+                  .form-input { width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px; color: #fff; font-size: 15px; outline: none; }
+                  .form-input:focus { border-color: #10b981; }
+                  .presets-wrap { display: flex; gap: 6px; }
+                  .preset-chip { flex: 1; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; padding: 6px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
+                  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+                  .cat-card { background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; font-weight: 700; color: #cbd5e1; text-align: center; }
+                  .cat-card.selected { border-color: #10b981; background: rgba(16, 185, 129, 0.15); color: #10b981; }
+                  .cat-card span:first-child { font-size: 20px; }
+
+                  /* Analytics Tab */
+                  .analytics-wrap { display: flex; flex-direction: column; gap: 14px; }
+                  .cat-stat-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+                  .cat-stat-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+                  .hidden { display: none !important; }
+              </style>
+          </head>
+          <body>
+
+              <div class="container">
+                  <!-- App Header -->
+                  <div class="app-header">
+                      <div class="logo-area">
+                          <div class="logo-icon">💰</div>
+                          <span class="logo-title">محفظتي الذكية</span>
+                      </div>
+                      <div class="tabs-nav">
+                          <button id="nav-dash" class="tab-btn active" onclick="switchNav('dash')">الرئيسية</button>
+                          <button id="nav-reports" class="tab-btn" onclick="switchNav('reports')">التقارير</button>
+                          <button id="nav-settings" class="tab-btn" onclick="switchNav('settings')">الإعدادات</button>
+                      </div>
+                  </div>
+
+                  <!-- Tab 1: Dashboard -->
+                  <div id="tab-dash" class="tab-content" style="display:flex; flex-direction:column; gap:14px;">
+                      <!-- Balance Card -->
+                      <div class="balance-card">
+                          <span class="balance-label">الرصيد المالي الحالي</span>
+                          <div class="balance-amount">
+                              <span id="txt-balance">0.00</span>
+                              <span id="txt-curr1" class="currency-tag">ر.س</span>
+                          </div>
+                          <div class="balance-grid">
+                              <div class="sub-card">
+                                  <span class="sub-label">🟢 إجمالي الدخل</span>
+                                  <span id="txt-income" class="sub-val-in">+0.00</span>
+                              </div>
+                              <div class="sub-card">
+                                  <span class="sub-label">🔴 إجمالي المصاريف</span>
+                                  <span id="txt-expense" class="sub-val-out">-0.00</span>
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Monthly Budget Bar -->
+                      <div class="budget-card">
+                          <div class="budget-header">
+                              <span class="budget-title">📊 الميزانية الشهرية (<span id="txt-budget-limit">0</span> <span id="txt-curr2">ر.س</span>)</span>
+                              <span id="txt-budget-pct" class="budget-remain">0% مستهلك</span>
+                          </div>
+                          <div class="progress-track">
+                              <div id="bar-budget" class="progress-fill" style="width: 0%; background: #10b981;"></div>
+                          </div>
+                          <div id="box-budget-warn" class="budget-warning hidden">⚠️ تنبيه: لقد استهلكت أكثر من 85% من ميزانيتك المحددة!</div>
+                      </div>
+
+                      <!-- Quick Add Button -->
+                      <button class="btn-add-tx" onclick="openAddModal()">
+                          <span>➕ إضافة مصروف أو دخل جديد</span>
+                      </button>
+
+                      <!-- Transactions Header & Filter -->
+                      <div class="section-title-wrap">
+                          <span class="section-title">سجل العمليات</span>
+                          <div class="filter-chips">
+                              <button class="chip active" onclick="setFilter('all', this)">الكل</button>
+                              <button class="chip" onclick="setFilter('expense', this)">مصاريف</button>
+                              <button class="chip" onclick="setFilter('income', this)">دخل</button>
+                          </div>
+                      </div>
+
+                      <!-- Transactions List -->
+                      <div id="tx-list-container" class="tx-list"></div>
+                  </div>
+
+                  <!-- Tab 2: Analytics & Reports -->
+                  <div id="tab-reports" class="tab-content hidden" style="flex-direction:column; gap:14px;">
+                      <div class="section-title">📊 توزيع المصاريف حسب الفئات</div>
+                      <div id="reports-categories-list" class="analytics-wrap"></div>
+                  </div>
+
+                  <!-- Tab 3: Settings -->
+                  <div id="tab-settings" class="tab-content hidden" style="flex-direction:column; gap:14px;">
+                      <div class="budget-card">
+                          <span class="section-title">⚙️ تخصيص العملة والميزانية</span>
+                          <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+                              <div>
+                                  <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">العملة المعروضة:</label>
+                                  <select id="sel-currency" class="form-input" onchange="updateCurrency(this.value)">
+                                      <option value="ر.س">ريال سعودي (ر.س)</option>
+                                      <option value="د.إ">درهم إماراتي (د.إ)</option>
+                                      <option value="ج.م">جنيه مصري (ج.م)</option>
+                                      <option value="د.ك">دينار كويتي (د.ك)</option>
+                                      <option value="د.أ">دينار أردني (د.أ)</option>
+                                      <option value="ر.ع">ريال عماني (ر.ع)</option>
+                                      <option value="ر.ق">ريال قطري (ر.ق)</option>
+                                      <option value="$">دولار أمريكي ($)</option>
+                                      <option value="€">يورو (€)</option>
+                                  </select>
+                              </div>
+                              <div>
+                                  <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">الميزانية المستهدفة شهرياً:</label>
+                                  <input type="number" id="inp-budget-target" class="form-input" placeholder="مثال: 4000" onchange="updateBudgetLimit(this.value)">
+                              </div>
+                          </div>
+                      </div>
+
+                      <!-- Data Export / Clear -->
+                      <div class="budget-card">
+                          <span class="section-title">💾 إدارة البيانات والنسخ الاحتياطي</span>
+                          <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+                              <button class="btn-add-tx" style="background:#1e293b; border:1px solid #334155;" onclick="exportDataReport()">
+                                  📋 نسخ كشف الحساب كاملاً (نصي)
+                              </button>
+                              <button class="btn-add-tx" style="background:#7f1d1d; border:1px solid #dc2626;" onclick="clearAllData()">
+                                  🗑️ مسح كافة الحركات والبدء من جديد
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Add Transaction Modal -->
+              <div id="add-modal" class="modal-bg" onclick="closeAddModal(event)">
+                  <div class="modal-box" onclick="event.stopPropagation()">
+                      <div style="display:flex; justify-content:space-between; align-items:center;">
+                          <span style="font-size:16px; font-weight:800; color:#fff;">إضافة حركة مالية</span>
+                          <button onclick="closeAddModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">✕</button>
+                      </div>
+
+                      <!-- Type Switcher -->
+                      <div class="type-switch">
+                          <button id="btn-type-exp" class="type-btn active-exp" onclick="setType('expense')">🔴 مصروف</button>
+                          <button id="btn-type-inc" class="type-btn" onclick="setType('income')">🟢 دخل</button>
+                      </div>
+
+                      <!-- Amount Input -->
+                      <div>
+                          <input type="number" id="tx-amount" class="form-input" style="font-size:22px; font-weight:800; text-align:center; color:#10b981;" placeholder="0.00" step="0.01">
+                          <div class="presets-wrap" style="margin-top:6px;">
+                              <button class="preset-chip" onclick="addPreset(10)">+10</button>
+                              <button class="preset-chip" onclick="addPreset(50)">+50</button>
+                              <button class="preset-chip" onclick="addPreset(100)">+100</button>
+                              <button class="preset-chip" onclick="addPreset(500)">+500</button>
+                          </div>
+                      </div>
+
+                      <!-- Category Selector -->
+                      <div>
+                          <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:6px; font-weight:700;">اختر الفئة:</label>
+                          <div id="cats-container" class="cat-grid"></div>
+                      </div>
+
+                      <!-- Notes -->
+                      <input type="text" id="tx-notes" class="form-input" placeholder="ملاحظات أو اسم المتجر (اختياري)">
+
+                      <button class="btn-add-tx" onclick="saveTransaction()">
+                          💾 حفظ المعاملة
+                      </button>
+                  </div>
+              </div>
+
+              <script>
+                  const expenseCategories = [
+                      { id: 'food', name: 'مطاعم وطعام', icon: '🍔' },
+                      { id: 'groceries', name: 'سوبرماركت', icon: '🛒' },
+                      { id: 'fuel', name: 'وقود ومواصلات', icon: '⛽' },
+                      { id: 'bills', name: 'فواتير وخدمات', icon: '💡' },
+                      { id: 'shopping', name: 'تسوق وملابس', icon: '🛍️' },
+                      { id: 'health', name: 'صحة وصيدلية', icon: '💊' },
+                      { id: 'education', name: 'تعليم ودورات', icon: '🎓' },
+                      { id: 'travel', name: 'سفر وسياحة', icon: '✈️' },
+                      { id: 'fun', name: 'ترفيه وهدايا', icon: '🎁' },
+                      { id: 'other_exp', name: 'مصاريف أخرى', icon: '📦' }
+                  ];
+
+                  const incomeCategories = [
+                      { id: 'salary', name: 'راتب شهري', icon: '💼' },
+                      { id: 'investment', name: 'أرباح واستثمار', icon: '📈' },
+                      { id: 'bonus', name: 'مكافأة وهدية', icon: '🎁' },
+                      { id: 'freelance', name: 'دخل إضافي', icon: '💰' }
+                  ];
+
+                  let currentType = 'expense';
+                  let selectedCatId = 'food';
+                  let currentFilter = 'all';
+
+                  let appData = JSON.parse(localStorage.getItem('mywallet_data')) || {
+                      currency: 'ر.س',
+                      monthlyBudget: 3500,
+                      transactions: [
+                          { id: 1, type: 'income', amount: 6500, catId: 'salary', catName: 'راتب شهري', icon: '💼', notes: 'راتب هذا الشهر', date: '2025-01-01' },
+                          { id: 2, type: 'expense', amount: 220, catId: 'groceries', catName: 'سوبرماركت', icon: '🛒', notes: 'مشتريات منزلية', date: '2025-01-02' },
+                          { id: 3, type: 'expense', amount: 80, catId: 'fuel', catName: 'وقود ومواصلات', icon: '⛽', notes: 'بنزين السيارة', date: '2025-01-03' }
+                      ]
+                  };
+
+                  function saveData() {
+                      localStorage.setItem('mywallet_data', JSON.stringify(appData));
+                      renderAll();
+                  }
+
+                  function renderAll() {
+                      document.getElementById('sel-currency').value = appData.currency;
+                      document.getElementById('inp-budget-target').value = appData.monthlyBudget;
+                      document.getElementById('txt-curr1').innerText = appData.currency;
+                      document.getElementById('txt-curr2').innerText = appData.currency;
+                      document.getElementById('txt-budget-limit').innerText = appData.monthlyBudget.toLocaleString();
+
+                      let totalIn = 0;
+                      let totalOut = 0;
+
+                      appData.transactions.forEach(t => {
+                          if (t.type === 'income') totalIn += t.amount;
+                          else totalOut += t.amount;
+                      });
+
+                      const balance = totalIn - totalOut;
+                      document.getElementById('txt-balance').innerText = balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                      document.getElementById('txt-income').innerText = '+' + totalIn.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                      document.getElementById('txt-expense').innerText = '-' + totalOut.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+                      // Budget Calculation
+                      const budget = appData.monthlyBudget || 1;
+                      const pct = Math.min(Math.round((totalOut / budget) * 100), 100);
+                      document.getElementById('txt-budget-pct').innerText = `${pct}% مستهلك`;
+                      const bar = document.getElementById('bar-budget');
+                      bar.style.width = pct + '%';
+
+                      const warn = document.getElementById('box-budget-warn');
+                      if (pct >= 85) {
+                          bar.style.background = '#ef4444';
+                          warn.classList.remove('hidden');
+                      } else if (pct >= 65) {
+                          bar.style.background = '#f59e0b';
+                          warn.classList.add('hidden');
+                      } else {
+                          bar.style.background = '#10b981';
+                          warn.classList.add('hidden');
+                      }
+
+                      renderTransactionsList();
+                      renderReports();
+                  }
+
+                  function renderTransactionsList() {
+                      const container = document.getElementById('tx-list-container');
+                      container.innerHTML = '';
+
+                      const filtered = appData.transactions.filter(t => {
+                          if (currentFilter === 'all') return true;
+                          return t.type === currentFilter;
+                      });
+
+                      if (filtered.length === 0) {
+                          container.innerHTML = '<div class="empty-box">لا توجد حركات مسجلة حالياً</div>';
+                          return;
+                      }
+
+                      // Most recent first
+                      const reversed = [...filtered].reverse();
+                      reversed.forEach(t => {
+                          const item = document.createElement('div');
+                          item.className = 'tx-item';
+                          const isInc = t.type === 'income';
+                          item.innerHTML = `
+                              <div class="tx-right">
+                                  <div class="tx-icon-box">${t.icon}</div>
+                                  <div class="tx-info">
+                                      <span class="tx-name">${t.catName}</span>
+                                      <span class="tx-sub">${t.notes ? t.notes + ' • ' : ''}${t.date}</span>
+                                  </div>
+                              </div>
+                              <div class="tx-left">
+                                  <span class="tx-amount ${isInc ? 'tx-in' : 'tx-out'}">
+                                      ${isInc ? '+' : '-'}${t.amount.toLocaleString()} ${appData.currency}
+                                  </span>
+                                  <button class="btn-del-tx" onclick="deleteTx(${t.id})">🗑️</button>
+                              </div>
+                          `;
+                          container.appendChild(item);
+                      });
+                  }
+
+                  function renderReports() {
+                      const container = document.getElementById('reports-categories-list');
+                      container.innerHTML = '';
+
+                      let totalOut = 0;
+                      const catTotals = {};
+
+                      appData.transactions.forEach(t => {
+                          if (t.type === 'expense') {
+                              totalOut += t.amount;
+                              if (!catTotals[t.catId]) {
+                                  catTotals[t.catId] = { name: t.catName, icon: t.icon, amount: 0 };
+                              }
+                              catTotals[t.catId].amount += t.amount;
+                          }
+                      });
+
+                      if (totalOut === 0) {
+                          container.innerHTML = '<div class="empty-box">لا توجد مصاريف لتحليلها حتى الآن</div>';
+                          return;
+                      }
+
+                      const sorted = Object.values(catTotals).sort((a, b) => b.amount - a.amount);
+                      sorted.forEach(c => {
+                          const pct = Math.round((c.amount / totalOut) * 100);
+                          const card = document.createElement('div');
+                          card.className = 'cat-stat-card';
+                          card.innerHTML = `
+                              <div class="cat-stat-header">
+                                  <span>${c.icon} ${c.name}</span>
+                                  <span style="color:#10b981;">${c.amount.toLocaleString()} ${appData.currency} (${pct}%)</span>
+                              </div>
+                              <div class="progress-track">
+                                  <div class="progress-fill" style="width: ${pct}%; background:#10b981;"></div>
+                              </div>
+                          `;
+                          container.appendChild(card);
+                      });
+                  }
+
+                  function switchNav(tab) {
+                      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+                      document.getElementById('nav-' + tab).classList.add('active');
+                      const target = document.getElementById('tab-' + tab);
+                      target.classList.remove('hidden');
+                      target.style.display = 'flex';
+                  }
+
+                  function setFilter(f, btn) {
+                      currentFilter = f;
+                      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                      btn.classList.add('active');
+                      renderTransactionsList();
+                  }
+
+                  function openAddModal() {
+                      document.getElementById('add-modal').style.display = 'flex';
+                      document.getElementById('tx-amount').value = '';
+                      document.getElementById('tx-notes').value = '';
+                      setType('expense');
+                  }
+
+                  function closeAddModal() {
+                      document.getElementById('add-modal').style.display = 'none';
+                  }
+
+                  function setType(type) {
+                      currentType = type;
+                      const btnExp = document.getElementById('btn-type-exp');
+                      const btnInc = document.getElementById('btn-type-inc');
+                      const amountInput = document.getElementById('tx-amount');
+
+                      if (type === 'expense') {
+                          btnExp.className = 'type-btn active-exp';
+                          btnInc.className = 'type-btn';
+                          amountInput.style.color = '#ef4444';
+                          renderCategories(expenseCategories);
+                      } else {
+                          btnInc.className = 'type-btn active-inc';
+                          btnExp.className = 'type-btn';
+                          amountInput.style.color = '#10b981';
+                          renderCategories(incomeCategories);
+                      }
+                  }
+
+                  function renderCategories(cats) {
+                      const container = document.getElementById('cats-container');
+                      container.innerHTML = '';
+                      selectedCatId = cats[0].id;
+                      cats.forEach(c => {
+                          const div = document.createElement('div');
+                          div.className = 'cat-card ' + (c.id === selectedCatId ? 'selected' : '');
+                          div.innerHTML = `<span>${c.icon}</span><span>${c.name}</span>`;
+                          div.onclick = () => {
+                              document.querySelectorAll('.cat-card').forEach(k => k.classList.remove('selected'));
+                              div.classList.add('selected');
+                              selectedCatId = c.id;
+                          };
+                          container.appendChild(div);
+                      });
+                  }
+
+                  function addPreset(val) {
+                      const inp = document.getElementById('tx-amount');
+                      const cur = parseFloat(inp.value) || 0;
+                      inp.value = (cur + val).toFixed(2);
+                  }
+
+                  function saveTransaction() {
+                      const amount = parseFloat(document.getElementById('tx-amount').value);
+                      if (isNaN(amount) || amount <= 0) {
+                          alert('الرجاء إدخال مبلغ صحيح أكبر من الصفر');
+                          return;
+                      }
+
+                      const cats = currentType === 'expense' ? expenseCategories : incomeCategories;
+                      const catObj = cats.find(c => c.id === selectedCatId) || cats[0];
+                      const notes = document.getElementById('tx-notes').value.trim();
+
+                      const newTx = {
+                          id: Date.now(),
+                          type: currentType,
+                          amount: amount,
+                          catId: catObj.id,
+                          catName: catObj.name,
+                          icon: catObj.icon,
+                          notes: notes,
+                          date: new Date().toISOString().split('T')[0]
+                      };
+
+                      appData.transactions.push(newTx);
+                      saveData();
+                      closeAddModal();
+                  }
+
+                  function deleteTx(id) {
+                      if (confirm('هل أنت متأكد من حذف هذه المعاملة؟')) {
+                          appData.transactions = appData.transactions.filter(t => t.id !== id);
+                          saveData();
+                      }
+                  }
+
+                  function updateCurrency(val) {
+                      appData.currency = val;
+                      saveData();
+                  }
+
+                  function updateBudgetLimit(val) {
+                      const b = parseFloat(val);
+                      if (!isNaN(b) && b >= 0) {
+                          appData.monthlyBudget = b;
+                          saveData();
+                      }
+                  }
+
+                  function exportDataReport() {
+                      let txt = `📋 كشف حساب - محفظتي الذكية\n`;
+                      txt += `الرصيد الإجمالي: ${document.getElementById('txt-balance').innerText} ${appData.currency}\n`;
+                      txt += `---------------------------------\n`;
+                      appData.transactions.forEach(t => {
+                          const sign = t.type === 'income' ? '+' : '-';
+                          txt += `${t.date} | ${t.catName}: ${sign}${t.amount} ${appData.currency} ${t.notes ? '(' + t.notes + ')' : ''}\n`;
+                      });
+
+                      if (navigator.clipboard) {
+                          navigator.clipboard.writeText(txt).then(() => {
+                              alert('تم نسخ كشف الحساب كاملاً إلى الحافظة بنجاح!');
+                          });
+                      } else {
+                          alert('تم إنشاء التقرير:\n' + txt);
+                      }
+                  }
+
+                  function clearAllData() {
+                      if (confirm('تحذير: هل أنت متأكد تماماً من حذف كافة الحركات المالية وتصفير الرصيد؟')) {
+                          appData.transactions = [];
+                          saveData();
+                          alert('تم مسح البيانات بنجاح!');
+                      }
+                  }
+
+                  // Initial setup
+                  renderAll();
+              </script>
+          </body>
+          </html>
+          EOF
+
+      - name: Build Gradle Wrapper
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          gradle wrapper --gradle-version 8.5
+          chmod +x gradlew
+
+      - name: Build Android APK
+        run: |
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk Smart-Wallet.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Smart-Wallet-APK
+          path: Smart-Wallet.apk
