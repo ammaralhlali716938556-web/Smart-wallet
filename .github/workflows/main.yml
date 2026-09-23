@@ -159,7 +159,7 @@ jobs:
                   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                       Window window = getWindow();
                       window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-                      window.setStatusBarColor(Color.parseColor("#09101d"));
+                      window.setStatusBarColor(Color.parseColor("#070d18"));
                   }
 
                   webView = new WebView(this);
@@ -234,9 +234,9 @@ jobs:
                       if dist > r:
                           raw.extend([0, 0, 0, 0])
                           continue
-                      bg_r = int(9 + (y / size) * 12)
-                      bg_g = int(20 + (y / size) * 22)
-                      bg_b = int(32 + (y / size) * 30)
+                      bg_r = int(7 + (y / size) * 10)
+                      bg_g = int(14 + (y / size) * 18)
+                      bg_b = int(24 + (y / size) * 26)
 
                       if dist >= r - 3:
                           raw.extend([16, 185, 129, 255])
@@ -278,7 +278,7 @@ jobs:
           python3 make_icons.py
           rm make_icons.py
 
-      - name: Embed Smart Wallet HTML App
+      - name: Embed Ultra-Modern Smart Wallet HTML App
         run: |
           cat << 'EOF' > app/src/main/assets/index.html
           <!DOCTYPE html>
@@ -288,171 +288,187 @@ jobs:
               <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
               <title>محفظتي الذكية</title>
               <style>
-                  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+                  @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
                   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Cairo', sans-serif; -webkit-tap-highlight-color: transparent; }
-                  body { background-color: #09101d; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px; user-select: none; }
-                  .container { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 14px; padding-bottom: 30px; }
+                  body { background: radial-gradient(circle at 50% 0%, #0d1a2d 0%, #070d18 100%); color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 12px 14px 20px; user-select: none; }
+                  .container { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 14px; }
 
                   /* Header */
-                  .app-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px 6px; }
-                  .logo-area { display: flex; align-items: center; gap: 10px; }
-                  .logo-icon { background: linear-gradient(135deg, #10b981 0%, #059669 100%); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); }
-                  .logo-title { font-size: 18px; font-weight: 900; color: #fff; }
-                  .tabs-nav { display: flex; background: rgba(30, 41, 59, 0.7); padding: 4px; border-radius: 12px; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.05); }
-                  .tab-btn { background: none; border: none; padding: 6px 12px; border-radius: 8px; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-                  .tab-btn.active { background: #10b981; color: #fff; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4); }
+                  .app-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 2px 4px; }
+                  .header-brand { display: flex; align-items: center; gap: 10px; }
+                  .brand-avatar { width: 44px; height: 44px; border-radius: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); display: flex; align-items: center; justify-content: center; font-size: 22px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); border: 1px solid rgba(255, 255, 255, 0.15); }
+                  .brand-title { font-size: 19px; font-weight: 900; color: #fff; letter-spacing: -0.3px; line-height: 1.2; }
+                  .brand-subtitle { font-size: 11px; color: #94a3b8; font-weight: 600; }
 
-                  /* Main Balance Card */
-                  .balance-card { background: linear-gradient(145deg, #112620, #0c1815); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 20px; padding: 18px 20px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); position: relative; overflow: hidden; }
-                  .balance-card::before { content: ''; position: absolute; top: -50px; left: -50px; width: 120px; height: 120px; background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%); }
-                  .balance-label { font-size: 12px; color: #94a3b8; font-weight: 600; }
-                  .balance-amount { font-size: 32px; font-weight: 900; color: #10b981; margin: 4px 0 14px; text-shadow: 0 0 15px rgba(16, 185, 129, 0.3); display: flex; align-items: baseline; gap: 6px; }
-                  .currency-tag { font-size: 14px; color: #6ee7b7; font-weight: 700; }
-                  .balance-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
-                  .sub-card { display: flex; flex-direction: column; gap: 2px; }
-                  .sub-label { font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 4px; }
-                  .sub-val-in { font-size: 16px; font-weight: 800; color: #34d399; }
-                  .sub-val-out { font-size: 16px; font-weight: 800; color: #f87171; }
+                  /* Segmented Modern Navigation */
+                  .nav-segments { display: flex; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); padding: 5px; border-radius: 16px; gap: 4px; border: 1px solid rgba(255, 255, 255, 0.06); }
+                  .seg-btn { flex: 1; background: none; border: none; padding: 8px 12px; border-radius: 12px; color: #94a3b8; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.25s; display: flex; align-items: center; justify-content: center; gap: 5px; }
+                  .seg-btn.active { background: linear-gradient(135deg, #10b981 0%, #047857 100%); color: #fff; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); }
 
-                  /* Budget Bar Card */
-                  .budget-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px; }
-                  .budget-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700; }
-                  .budget-title { color: #cbd5e1; display: flex; align-items: center; gap: 6px; }
-                  .budget-remain { color: #f59e0b; }
-                  .progress-track { width: 100%; height: 8px; background: #1e293b; border-radius: 6px; overflow: hidden; position: relative; }
-                  .progress-fill { height: 100%; border-radius: 6px; transition: 0.4s; }
-                  .budget-warning { font-size: 11px; color: #f87171; font-weight: 700; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+                  /* Modern Hero Balance Card */
+                  .hero-balance { background: linear-gradient(145deg, #0e2722 0%, #0a1916 100%); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 24px; padding: 22px; box-shadow: 0 16px 36px -10px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.15); position: relative; overflow: hidden; }
+                  .hero-balance::after { content: ''; position: absolute; top: -40px; right: -40px; width: 140px; height: 140px; background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%); border-radius: 50%; pointer-events: none; }
+                  .hero-label { font-size: 13px; color: #a7f3d0; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+                  .hero-amount { font-size: 38px; font-weight: 900; color: #10b981; margin: 6px 0 16px; text-shadow: 0 0 25px rgba(16, 185, 129, 0.4); display: flex; align-items: baseline; gap: 8px; }
+                  .hero-currency { font-size: 16px; font-weight: 700; color: #6ee7b7; }
+                  .hero-stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-top: 14px; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+                  .stat-pill { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px; }
+                  .stat-pill-label { font-size: 11px; color: #94a3b8; font-weight: 700; }
+                  .stat-pill-in { font-size: 18px; font-weight: 900; color: #34d399; }
+                  .stat-pill-out { font-size: 18px; font-weight: 900; color: #f87171; }
+
+                  /* Modern Budget Card */
+                  .budget-box { background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+                  .budget-meta { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 800; }
+                  .budget-meta-title { color: #e2e8f0; display: flex; align-items: center; gap: 6px; }
+                  .budget-badge { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 800; }
+                  .progress-rail { width: 100%; height: 9px; background: #1e293b; border-radius: 8px; overflow: hidden; position: relative; }
+                  .progress-bar-fill { height: 100%; border-radius: 8px; transition: width 0.4s ease-out; }
+                  .budget-alert-pill { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; font-size: 11px; font-weight: 800; padding: 6px 10px; border-radius: 10px; display: flex; align-items: center; gap: 6px; }
 
                   /* Action Button */
-                  .btn-add-tx { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 14px 20px; border-radius: 14px; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.35); transition: 0.2s; width: 100%; }
-                  .btn-add-tx:active { transform: scale(0.98); }
+                  .primary-fab { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 16px 20px; border-radius: 18px; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.45); transition: 0.2s; width: 100%; }
+                  .primary-fab:active { transform: scale(0.98); }
 
                   /* Transactions List */
-                  .section-title-wrap { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
-                  .section-title { font-size: 14px; font-weight: 800; color: #e2e8f0; }
-                  .filter-chips { display: flex; gap: 6px; }
-                  .chip { background: #1e293b; color: #94a3b8; border: none; padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
-                  .chip.active { background: #334155; color: #38bdf8; }
-                  .tx-list { display: flex; flex-direction: column; gap: 8px; }
-                  .tx-item { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+                  .list-header { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+                  .list-title { font-size: 15px; font-weight: 900; color: #f8fafc; }
+                  .filter-chips { display: flex; gap: 6px; background: rgba(15, 23, 42, 0.6); padding: 4px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
+                  .f-chip { background: none; border: none; color: #94a3b8; padding: 5px 12px; border-radius: 9px; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+                  .f-chip.active { background: #1e293b; color: #38bdf8; }
+                  .tx-cards-container { display: flex; flex-direction: column; gap: 10px; }
+                  .tx-card { background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 16px; padding: 13px 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
                   .tx-right { display: flex; align-items: center; gap: 12px; }
-                  .tx-icon-box { width: 38px; height: 38px; border-radius: 10px; background: #1e293b; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-                  .tx-info { display: flex; flex-direction: column; gap: 2px; }
-                  .tx-name { font-size: 14px; font-weight: 700; color: #f8fafc; }
-                  .tx-sub { font-size: 11px; color: #64748b; }
+                  .tx-icon-bubble { width: 44px; height: 44px; border-radius: 14px; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+                  .tx-meta { display: flex; flex-direction: column; gap: 2px; }
+                  .tx-name { font-size: 14px; font-weight: 800; color: #fff; }
+                  .tx-subtext { font-size: 11px; color: #64748b; font-weight: 600; }
                   .tx-left { display: flex; align-items: center; gap: 10px; }
-                  .tx-amount { font-size: 15px; font-weight: 800; }
-                  .tx-in { color: #34d399; }
-                  .tx-out { color: #f87171; }
-                  .btn-del-tx { background: none; border: none; color: #475569; font-size: 14px; cursor: pointer; padding: 4px; }
-                  .btn-del-tx:hover { color: #f43f5e; }
-                  .empty-box { text-align: center; padding: 30px 10px; color: #64748b; font-size: 13px; }
+                  .tx-val { font-size: 16px; font-weight: 900; }
+                  .tx-green { color: #34d399; }
+                  .tx-red { color: #f87171; }
+                  .tx-del-btn { background: none; border: none; color: #475569; font-size: 15px; cursor: pointer; padding: 4px; transition: 0.2s; }
+                  .tx-del-btn:hover { color: #f43f5e; }
 
-                  /* Modal Form */
-                  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); display: none; align-items: flex-end; justify-content: center; z-index: 100; }
-                  .modal-box { background: #0f172a; width: 100%; max-width: 460px; border-radius: 24px 24px 0 0; border-top: 1px solid rgba(255, 255, 255, 0.1); max-height: 88vh; overflow-y: auto; padding: 20px 18px; display: flex; flex-direction: column; gap: 14px; }
-                  .type-switch { display: grid; grid-template-columns: 1fr 1fr; background: #1e293b; border-radius: 12px; padding: 4px; gap: 4px; }
-                  .type-btn { background: none; border: none; padding: 10px; border-radius: 10px; color: #94a3b8; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; }
-                  .type-btn.active-exp { background: #ef4444; color: #fff; }
-                  .type-btn.active-inc { background: #10b981; color: #fff; }
-                  .form-input { width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px; color: #fff; font-size: 15px; outline: none; }
-                  .form-input:focus { border-color: #10b981; }
-                  .presets-wrap { display: flex; gap: 6px; }
-                  .preset-chip { flex: 1; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); color: #cbd5e1; padding: 6px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; }
-                  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-                  .cat-card { background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; font-weight: 700; color: #cbd5e1; text-align: center; }
-                  .cat-card.selected { border-color: #10b981; background: rgba(16, 185, 129, 0.15); color: #10b981; }
-                  .cat-card span:first-child { font-size: 20px; }
+                  /* Designer Badge in Footer */
+                  .footer-designer { margin-top: 10px; display: flex; justify-content: center; padding: 8px; }
+                  .designer-btn { background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%); border: 1px solid rgba(251, 191, 36, 0.35); border-radius: 14px; padding: 10px 18px; color: #fbbf24; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); transition: 0.25s; }
+                  .designer-btn:active { transform: scale(0.96); }
 
-                  /* Analytics Tab */
-                  .analytics-wrap { display: flex; flex-direction: column; gap: 14px; }
-                  .cat-stat-card { background: rgba(17, 24, 39, 0.7); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
-                  .cat-stat-header { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; }
+                  /* Modal */
+                  .modal-layer { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+                  .dialog-card { background: #0f172a; width: 100%; max-width: 360px; border-radius: 24px; border: 1px solid rgba(251, 191, 36, 0.4); padding: 24px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 25px rgba(251, 191, 36, 0.15); animation: zoomIn 0.2s ease-out; }
+                  .dialog-avatar { width: 68px; height: 68px; border-radius: 22px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); display: flex; align-items: center; justify-content: center; font-size: 34px; box-shadow: 0 8px 24px rgba(217, 119, 6, 0.4); }
+                  .dialog-title { font-size: 17px; font-weight: 900; color: #fff; }
+                  .dialog-text { font-size: 14px; font-weight: 700; color: #cbd5e1; line-height: 1.6; padding: 4px; }
+                  .dialog-close-btn { width: 100%; background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #fff; border: none; padding: 12px; border-radius: 14px; font-size: 14px; font-weight: 800; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(217, 119, 6, 0.35); }
+
+                  /* Form Modal */
+                  .form-sheet-layer { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: none; align-items: flex-end; justify-content: center; z-index: 150; }
+                  .form-sheet { background: #0f172a; width: 100%; max-width: 460px; border-radius: 28px 28px 0 0; border-top: 1px solid rgba(255, 255, 255, 0.12); max-height: 90vh; overflow-y: auto; padding: 22px 20px; display: flex; flex-direction: column; gap: 14px; }
+                  .type-switch { display: grid; grid-template-columns: 1fr 1fr; background: #1e293b; border-radius: 14px; padding: 4px; gap: 4px; }
+                  .t-btn { background: none; border: none; padding: 10px; border-radius: 11px; color: #94a3b8; font-weight: 800; font-size: 14px; cursor: pointer; transition: 0.2s; }
+                  .t-btn.active-exp { background: #ef4444; color: #fff; }
+                  .t-btn.active-inc { background: #10b981; color: #fff; }
+                  .modern-inp { width: 100%; background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 13px; color: #fff; font-size: 15px; outline: none; }
+                  .modern-inp:focus { border-color: #10b981; }
+                  .presets-row { display: flex; gap: 6px; }
+                  .p-chip { flex: 1; background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.06); color: #cbd5e1; padding: 7px; border-radius: 10px; font-size: 12px; font-weight: 800; cursor: pointer; }
+                  .cat-matrix { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+                  .cat-tile { background: #1e293b; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 14px; padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-size: 11px; font-weight: 700; color: #cbd5e1; text-align: center; }
+                  .cat-tile.selected { border-color: #10b981; background: rgba(16, 185, 129, 0.18); color: #10b981; }
+                  .cat-tile span:first-child { font-size: 22px; }
+
                   .hidden { display: none !important; }
+                  @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
               </style>
           </head>
           <body>
 
               <div class="container">
-                  <!-- App Header -->
+                  <!-- Header -->
                   <div class="app-header">
-                      <div class="logo-area">
-                          <div class="logo-icon">💰</div>
-                          <span class="logo-title">محفظتي الذكية</span>
-                      </div>
-                      <div class="tabs-nav">
-                          <button id="nav-dash" class="tab-btn active" onclick="switchNav('dash')">الرئيسية</button>
-                          <button id="nav-reports" class="tab-btn" onclick="switchNav('reports')">التقارير</button>
-                          <button id="nav-settings" class="tab-btn" onclick="switchNav('settings')">الإعدادات</button>
+                      <div class="header-brand">
+                          <div class="brand-avatar">💰</div>
+                          <div>
+                              <div class="brand-title">محفظتي الذكية</div>
+                              <div class="brand-subtitle">الإدارة المالية والميزانية المباشرة</div>
+                          </div>
                       </div>
                   </div>
 
+                  <!-- Navigation Bar -->
+                  <div class="nav-segments">
+                      <button id="seg-dash" class="seg-btn active" onclick="switchNav('dash')">🏠 الرئيسية</button>
+                      <button id="seg-reports" class="seg-btn" onclick="switchNav('reports')">📊 التقارير</button>
+                      <button id="seg-settings" class="seg-btn" onclick="switchNav('settings')">⚙️ الإعدادات</button>
+                  </div>
+
                   <!-- Tab 1: Dashboard -->
-                  <div id="tab-dash" class="tab-content" style="display:flex; flex-direction:column; gap:14px;">
-                      <!-- Balance Card -->
-                      <div class="balance-card">
-                          <span class="balance-label">الرصيد المالي الحالي</span>
-                          <div class="balance-amount">
-                              <span id="txt-balance">0.00</span>
-                              <span id="txt-curr1" class="currency-tag">ر.س</span>
+                  <div id="tab-dash" class="tab-pane" style="display:flex; flex-direction:column; gap:14px;">
+                      <!-- Hero Balance Card -->
+                      <div class="hero-balance">
+                          <span class="hero-label">💎 الرصيد الصافي المتبقي</span>
+                          <div class="hero-amount">
+                              <span id="txt-balance">0</span>
+                              <span id="txt-curr1" class="hero-currency">ر.ي</span>
                           </div>
-                          <div class="balance-grid">
-                              <div class="sub-card">
-                                  <span class="sub-label">🟢 إجمالي الدخل</span>
-                                  <span id="txt-income" class="sub-val-in">+0.00</span>
+                          <div class="hero-stats-row">
+                              <div class="stat-pill">
+                                  <span class="stat-pill-label">🟢 إجمالي الدخل</span>
+                                  <span id="txt-income" class="stat-pill-in">+0</span>
                               </div>
-                              <div class="sub-card">
-                                  <span class="sub-label">🔴 إجمالي المصاريف</span>
-                                  <span id="txt-expense" class="sub-val-out">-0.00</span>
+                              <div class="stat-pill">
+                                  <span class="stat-pill-label">🔴 إجمالي المصاريف</span>
+                                  <span id="txt-expense" class="stat-pill-out">-0</span>
                               </div>
                           </div>
                       </div>
 
                       <!-- Monthly Budget Bar -->
-                      <div class="budget-card">
-                          <div class="budget-header">
-                              <span class="budget-title">📊 الميزانية الشهرية (<span id="txt-budget-limit">0</span> <span id="txt-curr2">ر.س</span>)</span>
-                              <span id="txt-budget-pct" class="budget-remain">0% مستهلك</span>
+                      <div class="budget-box">
+                          <div class="budget-meta">
+                              <span class="budget-meta-title">🎯 الميزانية: <span id="txt-budget-limit" style="color:#fff;">0</span> <span id="txt-curr2">ر.ي</span></span>
+                              <span id="txt-budget-pct" class="budget-badge">0% مستهلك</span>
                           </div>
-                          <div class="progress-track">
-                              <div id="bar-budget" class="progress-fill" style="width: 0%; background: #10b981;"></div>
+                          <div class="progress-rail">
+                              <div id="bar-budget" class="progress-bar-fill" style="width: 0%; background: #10b981;"></div>
                           </div>
-                          <div id="box-budget-warn" class="budget-warning hidden">⚠️ تنبيه: لقد استهلكت أكثر من 85% من ميزانيتك المحددة!</div>
+                          <div id="box-budget-warn" class="budget-alert-pill hidden">⚠️ تنبيه: تجاوزت 85% من الميزانية المحددة!</div>
                       </div>
 
-                      <!-- Quick Add Button -->
-                      <button class="btn-add-tx" onclick="openAddModal()">
-                          <span>➕ إضافة مصروف أو دخل جديد</span>
+                      <!-- Quick Add Action Button -->
+                      <button class="primary-fab" onclick="openAddModal()">
+                          <span>➕ تسجيل حركة مالية جديدة</span>
                       </button>
 
-                      <!-- Transactions Header & Filter -->
-                      <div class="section-title-wrap">
-                          <span class="section-title">سجل العمليات</span>
+                      <!-- Filter & Transactions List -->
+                      <div class="list-header">
+                          <span class="list-title">سجل العمليات</span>
                           <div class="filter-chips">
-                              <button class="chip active" onclick="setFilter('all', this)">الكل</button>
-                              <button class="chip" onclick="setFilter('expense', this)">مصاريف</button>
-                              <button class="chip" onclick="setFilter('income', this)">دخل</button>
+                              <button class="f-chip active" onclick="setFilter('all', this)">الكل</button>
+                              <button class="f-chip" onclick="setFilter('expense', this)">مصاريف</button>
+                              <button class="f-chip" onclick="setFilter('income', this)">دخل</button>
                           </div>
                       </div>
-
-                      <!-- Transactions List -->
-                      <div id="tx-list-container" class="tx-list"></div>
+                      <div id="tx-cards-container" class="tx-cards-container"></div>
                   </div>
 
-                  <!-- Tab 2: Analytics & Reports -->
-                  <div id="tab-reports" class="tab-content hidden" style="flex-direction:column; gap:14px;">
-                      <div class="section-title">📊 توزيع المصاريف حسب الفئات</div>
-                      <div id="reports-categories-list" class="analytics-wrap"></div>
+                  <!-- Tab 2: Reports -->
+                  <div id="tab-reports" class="tab-pane hidden" style="flex-direction:column; gap:14px;">
+                      <span class="list-title">📊 تحليل توزيع المصاريف حسب الفئات</span>
+                      <div id="reports-categories-list" style="display:flex; flex-direction:column; gap:12px;"></div>
                   </div>
 
                   <!-- Tab 3: Settings -->
-                  <div id="tab-settings" class="tab-content hidden" style="flex-direction:column; gap:14px;">
-                      <div class="budget-card">
-                          <span class="section-title">⚙️ تخصيص العملة والميزانية</span>
-                          <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
+                  <div id="tab-settings" class="tab-pane hidden" style="flex-direction:column; gap:14px;">
+                      <div class="budget-box">
+                          <span class="list-title">⚙️ تخصيص العملة والميزانية</span>
+                          <div style="margin-top:10px; display:flex; flex-direction:column; gap:12px;">
                               <div>
-                                  <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">العملة المعروضة:</label>
-                                  <select id="sel-currency" class="form-input" onchange="updateCurrency(this.value)">
+                                  <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:5px; font-weight:700;">العملة الرئيسية:</label>
+                                  <select id="sel-currency" class="modern-inp" onchange="updateCurrency(this.value)">
+                                      <option value="ر.ي">ريال يمني (ر.ي)</option>
                                       <option value="ر.س">ريال سعودي (ر.س)</option>
                                       <option value="د.إ">درهم إماراتي (د.إ)</option>
                                       <option value="ج.م">جنيه مصري (ج.م)</option>
@@ -465,68 +481,88 @@ jobs:
                                   </select>
                               </div>
                               <div>
-                                  <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:4px;">الميزانية المستهدفة شهرياً:</label>
-                                  <input type="number" id="inp-budget-target" class="form-input" placeholder="مثال: 4000" onchange="updateBudgetLimit(this.value)">
+                                  <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:5px; font-weight:700;">الميزانية الشهرية المحددة:</label>
+                                  <input type="number" id="inp-budget-target" class="modern-inp" placeholder="مثال: 250000" onchange="updateBudgetLimit(this.value)">
                               </div>
                           </div>
                       </div>
 
-                      <!-- Data Export / Clear -->
-                      <div class="budget-card">
-                          <span class="section-title">💾 إدارة البيانات والنسخ الاحتياطي</span>
+                      <div class="budget-box">
+                          <span class="list-title">💾 إدارة البيانات</span>
                           <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
-                              <button class="btn-add-tx" style="background:#1e293b; border:1px solid #334155;" onclick="exportDataReport()">
+                              <button class="primary-fab" style="background:#1e293b; border:1px solid #334155; font-size:14px;" onclick="exportDataReport()">
                                   📋 نسخ كشف الحساب كاملاً (نصي)
                               </button>
-                              <button class="btn-add-tx" style="background:#7f1d1d; border:1px solid #dc2626;" onclick="clearAllData()">
+                              <button class="primary-fab" style="background:#7f1d1d; border:1px solid #dc2626; font-size:14px;" onclick="clearAllData()">
                                   🗑️ مسح كافة الحركات والبدء من جديد
                               </button>
                           </div>
                       </div>
                   </div>
+
+                  <!-- Designer Footer Badge -->
+                  <div class="footer-designer">
+                      <button class="designer-btn" onclick="openDesignerModal()">
+                          <span>👑</span>
+                          <span>حول المصمم</span>
+                      </button>
+                  </div>
               </div>
 
-              <!-- Add Transaction Modal -->
-              <div id="add-modal" class="modal-bg" onclick="closeAddModal(event)">
-                  <div class="modal-box" onclick="event.stopPropagation()">
+              <!-- About Designer Modal -->
+              <div id="designer-modal" class="modal-layer" onclick="closeDesignerModal(event)">
+                  <div class="dialog-card" onclick="event.stopPropagation()">
+                      <div class="dialog-avatar">👑</div>
+                      <div class="dialog-title">بطاقة المطور والمصمم</div>
+                      <div class="dialog-text">
+                          تم تصميم البرنامج بكل فخر من قبل المصمم والمبرمج : عمار الهلالي أبو أسد
+                      </div>
+                      <button class="dialog-close-btn" onclick="closeDesignerModal()">إغلاق</button>
+                  </div>
+              </div>
+
+              <!-- Add Transaction Sheet -->
+              <div id="add-modal" class="form-sheet-layer" onclick="closeAddModal(event)">
+                  <div class="form-sheet" onclick="event.stopPropagation()">
                       <div style="display:flex; justify-content:space-between; align-items:center;">
-                          <span style="font-size:16px; font-weight:800; color:#fff;">إضافة حركة مالية</span>
-                          <button onclick="closeAddModal()" style="background:none; border:none; color:#94a3b8; font-size:20px; cursor:pointer;">✕</button>
+                          <span style="font-size:17px; font-weight:900; color:#fff;">تسجيل حركة مالية جديدة</span>
+                          <button onclick="closeAddModal()" style="background:none; border:none; color:#94a3b8; font-size:22px; cursor:pointer;">✕</button>
                       </div>
 
-                      <!-- Type Switcher -->
                       <div class="type-switch">
-                          <button id="btn-type-exp" class="type-btn active-exp" onclick="setType('expense')">🔴 مصروف</button>
-                          <button id="btn-type-inc" class="type-btn" onclick="setType('income')">🟢 دخل</button>
+                          <button id="btn-type-exp" class="t-btn active-exp" onclick="setType('expense')">🔴 مصروف</button>
+                          <button id="btn-type-inc" class="t-btn" onclick="setType('income')">🟢 دخل</button>
                       </div>
 
-                      <!-- Amount Input -->
                       <div>
-                          <input type="number" id="tx-amount" class="form-input" style="font-size:22px; font-weight:800; text-align:center; color:#10b981;" placeholder="0.00" step="0.01">
-                          <div class="presets-wrap" style="margin-top:6px;">
-                              <button class="preset-chip" onclick="addPreset(10)">+10</button>
-                              <button class="preset-chip" onclick="addPreset(50)">+50</button>
-                              <button class="preset-chip" onclick="addPreset(100)">+100</button>
-                              <button class="preset-chip" onclick="addPreset(500)">+500</button>
+                          <input type="number" id="tx-amount" class="modern-inp" style="font-size:26px; font-weight:900; text-align:center; color:#10b981;" placeholder="0" step="1">
+                          <div class="presets-row" style="margin-top:8px;">
+                              <button class="p-chip" onclick="addPreset(500)">+500</button>
+                              <button class="p-chip" onclick="addPreset(1000)">+1,000</button>
+                              <button class="p-chip" onclick="addPreset(5000)">+5,000</button>
+                              <button class="p-chip" onclick="addPreset(10000)">+10,000</button>
                           </div>
                       </div>
 
-                      <!-- Category Selector -->
                       <div>
-                          <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:6px; font-weight:700;">اختر الفئة:</label>
-                          <div id="cats-container" class="cat-grid"></div>
+                          <label style="font-size:12px; color:#94a3b8; display:block; margin-bottom:6px; font-weight:800;">اختر الفئة المناسبة:</label>
+                          <div id="cats-matrix" class="cat-matrix"></div>
                       </div>
 
-                      <!-- Notes -->
-                      <input type="text" id="tx-notes" class="form-input" placeholder="ملاحظات أو اسم المتجر (اختياري)">
+                      <input type="text" id="tx-notes" class="modern-inp" placeholder="ملاحظات أو اسم المتجر (اختياري)">
 
-                      <button class="btn-add-tx" onclick="saveTransaction()">
-                          💾 حفظ المعاملة
+                      <button class="primary-fab" onclick="saveTransaction()">
+                          💾 حفظ المعاملة في المحفظة
                       </button>
                   </div>
               </div>
 
               <script>
+                  function formatMoney(val) {
+                      const num = Math.round(Number(val) || 0);
+                      return num.toLocaleString('en-US');
+                  }
+
                   const expenseCategories = [
                       { id: 'food', name: 'مطاعم وطعام', icon: '🍔' },
                       { id: 'groceries', name: 'سوبرماركت', icon: '🛒' },
@@ -542,7 +578,7 @@ jobs:
 
                   const incomeCategories = [
                       { id: 'salary', name: 'راتب شهري', icon: '💼' },
-                      { id: 'investment', name: 'أرباح واستثمار', icon: '📈' },
+                      { id: 'investment', name: 'أرباح وتجارة', icon: '📈' },
                       { id: 'bonus', name: 'مكافأة وهدية', icon: '🎁' },
                       { id: 'freelance', name: 'دخل إضافي', icon: '💰' }
                   ];
@@ -552,12 +588,12 @@ jobs:
                   let currentFilter = 'all';
 
                   let appData = JSON.parse(localStorage.getItem('mywallet_data')) || {
-                      currency: 'ر.س',
-                      monthlyBudget: 3500,
+                      currency: 'ر.ي',
+                      monthlyBudget: 250000,
                       transactions: [
-                          { id: 1, type: 'income', amount: 6500, catId: 'salary', catName: 'راتب شهري', icon: '💼', notes: 'راتب هذا الشهر', date: '2025-01-01' },
-                          { id: 2, type: 'expense', amount: 220, catId: 'groceries', catName: 'سوبرماركت', icon: '🛒', notes: 'مشتريات منزلية', date: '2025-01-02' },
-                          { id: 3, type: 'expense', amount: 80, catId: 'fuel', catName: 'وقود ومواصلات', icon: '⛽', notes: 'بنزين السيارة', date: '2025-01-03' }
+                          { id: 1, type: 'income', amount: 350000, catId: 'salary', catName: 'راتب شهري', icon: '💼', notes: 'راتب هذا الشهر', date: '2025-01-01' },
+                          { id: 2, type: 'expense', amount: 15000, catId: 'groceries', catName: 'سوبرماركت', icon: '🛒', notes: 'مشتريات منزلية', date: '2025-01-02' },
+                          { id: 3, type: 'expense', amount: 8000, catId: 'fuel', catName: 'وقود ومواصلات', icon: '⛽', notes: 'بنزين السيارة', date: '2025-01-03' }
                       ]
                   };
 
@@ -568,23 +604,23 @@ jobs:
 
                   function renderAll() {
                       document.getElementById('sel-currency').value = appData.currency;
-                      document.getElementById('inp-budget-target').value = appData.monthlyBudget;
+                      document.getElementById('inp-budget-target').value = Math.round(appData.monthlyBudget);
                       document.getElementById('txt-curr1').innerText = appData.currency;
                       document.getElementById('txt-curr2').innerText = appData.currency;
-                      document.getElementById('txt-budget-limit').innerText = appData.monthlyBudget.toLocaleString();
+                      document.getElementById('txt-budget-limit').innerText = formatMoney(appData.monthlyBudget);
 
                       let totalIn = 0;
                       let totalOut = 0;
 
                       appData.transactions.forEach(t => {
-                          if (t.type === 'income') totalIn += t.amount;
-                          else totalOut += t.amount;
+                          if (t.type === 'income') totalIn += Math.round(t.amount);
+                          else totalOut += Math.round(t.amount);
                       });
 
                       const balance = totalIn - totalOut;
-                      document.getElementById('txt-balance').innerText = balance.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                      document.getElementById('txt-income').innerText = '+' + totalIn.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                      document.getElementById('txt-expense').innerText = '-' + totalOut.toLocaleString(undefined, { minimumFractionDigits: 2 });
+                      document.getElementById('txt-balance').innerText = formatMoney(balance);
+                      document.getElementById('txt-income').innerText = '+' + formatMoney(totalIn);
+                      document.getElementById('txt-expense').innerText = '-' + formatMoney(totalOut);
 
                       // Budget Calculation
                       const budget = appData.monthlyBudget || 1;
@@ -610,7 +646,7 @@ jobs:
                   }
 
                   function renderTransactionsList() {
-                      const container = document.getElementById('tx-list-container');
+                      const container = document.getElementById('tx-cards-container');
                       container.innerHTML = '';
 
                       const filtered = appData.transactions.filter(t => {
@@ -619,29 +655,28 @@ jobs:
                       });
 
                       if (filtered.length === 0) {
-                          container.innerHTML = '<div class="empty-box">لا توجد حركات مسجلة حالياً</div>';
+                          container.innerHTML = '<div style="text-align:center; padding:28px 10px; color:#64748b; font-size:13px; font-weight:700;">لا توجد عمليات مسجلة في هذا القسم</div>';
                           return;
                       }
 
-                      // Most recent first
                       const reversed = [...filtered].reverse();
                       reversed.forEach(t => {
                           const item = document.createElement('div');
-                          item.className = 'tx-item';
+                          item.className = 'tx-card';
                           const isInc = t.type === 'income';
                           item.innerHTML = `
                               <div class="tx-right">
-                                  <div class="tx-icon-box">${t.icon}</div>
-                                  <div class="tx-info">
+                                  <div class="tx-icon-bubble">${t.icon}</div>
+                                  <div class="tx-meta">
                                       <span class="tx-name">${t.catName}</span>
-                                      <span class="tx-sub">${t.notes ? t.notes + ' • ' : ''}${t.date}</span>
+                                      <span class="tx-subtext">${t.notes ? t.notes + ' • ' : ''}${t.date}</span>
                                   </div>
                               </div>
                               <div class="tx-left">
-                                  <span class="tx-amount ${isInc ? 'tx-in' : 'tx-out'}">
-                                      ${isInc ? '+' : '-'}${t.amount.toLocaleString()} ${appData.currency}
+                                  <span class="tx-val ${isInc ? 'tx-green' : 'tx-red'}">
+                                      ${isInc ? '+' : '-'}${formatMoney(t.amount)} ${appData.currency}
                                   </span>
-                                  <button class="btn-del-tx" onclick="deleteTx(${t.id})">🗑️</button>
+                                  <button class="tx-del-btn" onclick="deleteTx(${t.id})">🗑️</button>
                               </div>
                           `;
                           container.appendChild(item);
@@ -657,16 +692,16 @@ jobs:
 
                       appData.transactions.forEach(t => {
                           if (t.type === 'expense') {
-                              totalOut += t.amount;
+                              totalOut += Math.round(t.amount);
                               if (!catTotals[t.catId]) {
                                   catTotals[t.catId] = { name: t.catName, icon: t.icon, amount: 0 };
                               }
-                              catTotals[t.catId].amount += t.amount;
+                              catTotals[t.catId].amount += Math.round(t.amount);
                           }
                       });
 
                       if (totalOut === 0) {
-                          container.innerHTML = '<div class="empty-box">لا توجد مصاريف لتحليلها حتى الآن</div>';
+                          container.innerHTML = '<div style="text-align:center; padding:28px 10px; color:#64748b; font-size:13px; font-weight:700;">لا توجد مصاريف لتحليلها حتى الآن</div>';
                           return;
                       }
 
@@ -674,14 +709,14 @@ jobs:
                       sorted.forEach(c => {
                           const pct = Math.round((c.amount / totalOut) * 100);
                           const card = document.createElement('div');
-                          card.className = 'cat-stat-card';
+                          card.className = 'budget-box';
                           card.innerHTML = `
-                              <div class="cat-stat-header">
+                              <div class="budget-meta">
                                   <span>${c.icon} ${c.name}</span>
-                                  <span style="color:#10b981;">${c.amount.toLocaleString()} ${appData.currency} (${pct}%)</span>
+                                  <span style="color:#10b981;">${formatMoney(c.amount)} ${appData.currency} (${pct}%)</span>
                               </div>
-                              <div class="progress-track">
-                                  <div class="progress-fill" style="width: ${pct}%; background:#10b981;"></div>
+                              <div class="progress-rail">
+                                  <div class="progress-bar-fill" style="width: ${pct}%; background:#10b981;"></div>
                               </div>
                           `;
                           container.appendChild(card);
@@ -689,10 +724,10 @@ jobs:
                   }
 
                   function switchNav(tab) {
-                      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+                      document.querySelectorAll('.tab-pane').forEach(c => c.classList.add('hidden'));
 
-                      document.getElementById('nav-' + tab).classList.add('active');
+                      document.getElementById('seg-' + tab).classList.add('active');
                       const target = document.getElementById('tab-' + tab);
                       target.classList.remove('hidden');
                       target.style.display = 'flex';
@@ -700,7 +735,7 @@ jobs:
 
                   function setFilter(f, btn) {
                       currentFilter = f;
-                      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+                      document.querySelectorAll('.f-chip').forEach(c => c.classList.remove('active'));
                       btn.classList.add('active');
                       renderTransactionsList();
                   }
@@ -716,6 +751,14 @@ jobs:
                       document.getElementById('add-modal').style.display = 'none';
                   }
 
+                  function openDesignerModal() {
+                      document.getElementById('designer-modal').style.display = 'flex';
+                  }
+
+                  function closeDesignerModal() {
+                      document.getElementById('designer-modal').style.display = 'none';
+                  }
+
                   function setType(type) {
                       currentType = type;
                       const btnExp = document.getElementById('btn-type-exp');
@@ -723,28 +766,28 @@ jobs:
                       const amountInput = document.getElementById('tx-amount');
 
                       if (type === 'expense') {
-                          btnExp.className = 'type-btn active-exp';
-                          btnInc.className = 'type-btn';
+                          btnExp.className = 't-btn active-exp';
+                          btnInc.className = 't-btn';
                           amountInput.style.color = '#ef4444';
                           renderCategories(expenseCategories);
                       } else {
-                          btnInc.className = 'type-btn active-inc';
-                          btnExp.className = 'type-btn';
+                          btnInc.className = 't-btn active-inc';
+                          btnExp.className = 't-btn';
                           amountInput.style.color = '#10b981';
                           renderCategories(incomeCategories);
                       }
                   }
 
                   function renderCategories(cats) {
-                      const container = document.getElementById('cats-container');
+                      const container = document.getElementById('cats-matrix');
                       container.innerHTML = '';
                       selectedCatId = cats[0].id;
                       cats.forEach(c => {
                           const div = document.createElement('div');
-                          div.className = 'cat-card ' + (c.id === selectedCatId ? 'selected' : '');
+                          div.className = 'cat-tile ' + (c.id === selectedCatId ? 'selected' : '');
                           div.innerHTML = `<span>${c.icon}</span><span>${c.name}</span>`;
                           div.onclick = () => {
-                              document.querySelectorAll('.cat-card').forEach(k => k.classList.remove('selected'));
+                              document.querySelectorAll('.cat-tile').forEach(k => k.classList.remove('selected'));
                               div.classList.add('selected');
                               selectedCatId = c.id;
                           };
@@ -754,12 +797,12 @@ jobs:
 
                   function addPreset(val) {
                       const inp = document.getElementById('tx-amount');
-                      const cur = parseFloat(inp.value) || 0;
-                      inp.value = (cur + val).toFixed(2);
+                      const cur = Math.round(Number(inp.value)) || 0;
+                      inp.value = cur + val;
                   }
 
                   function saveTransaction() {
-                      const amount = parseFloat(document.getElementById('tx-amount').value);
+                      const amount = Math.round(Number(document.getElementById('tx-amount').value));
                       if (isNaN(amount) || amount <= 0) {
                           alert('الرجاء إدخال مبلغ صحيح أكبر من الصفر');
                           return;
@@ -798,7 +841,7 @@ jobs:
                   }
 
                   function updateBudgetLimit(val) {
-                      const b = parseFloat(val);
+                      const b = Math.round(Number(val));
                       if (!isNaN(b) && b >= 0) {
                           appData.monthlyBudget = b;
                           saveData();
@@ -811,7 +854,7 @@ jobs:
                       txt += `---------------------------------\n`;
                       appData.transactions.forEach(t => {
                           const sign = t.type === 'income' ? '+' : '-';
-                          txt += `${t.date} | ${t.catName}: ${sign}${t.amount} ${appData.currency} ${t.notes ? '(' + t.notes + ')' : ''}\n`;
+                          txt += `${t.date} | ${t.catName}: ${sign}${formatMoney(t.amount)} ${appData.currency} ${t.notes ? '(' + t.notes + ')' : ''}\n`;
                       });
 
                       if (navigator.clipboard) {
